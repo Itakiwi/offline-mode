@@ -43,6 +43,31 @@
         </v-list-item-group>
       </v-list>
     </v-card>
+
+     <v-card
+      class="mx-auto"
+      max-width="300"
+      tile
+    >
+      <v-list shaped>
+        <v-subheader>Articles</v-subheader>
+        <v-list-item-group color="primary">
+          <v-list-item
+            v-for="article in articles" 
+            :key="article.id"
+          >
+            <v-list-item-content>
+              <v-list-item-title>
+                <nuxt-link :to="'/articles/'+article.id">{{ article.title }}</nuxt-link>
+              </v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
+        </v-list-item-group>
+      </v-list>
+    </v-card>
+    <v-btn class="mx-2" fab dark small color="primary" @click="sendPOSTRequest">
+      <v-icon dark>fa-plus</v-icon>
+    </v-btn>
   </section>
 </template>
 
@@ -64,17 +89,32 @@ export default {
   }),
   computed: {
     users() {
-      console.log("dada ", this.$store)
       return this.$store.state.users.list
     }
   },
   async fetch({ store }){
     return store.dispatch('users/fetchUsers')
   },
+  async asyncData () {
+    const {data} = await axios.get('https://jsonplaceholder.typicode.com/posts?userId=1')
+    return {articles:data}
+  },
   methods: {
     goToCity() {
       this.$router.push(`/weather/${this.select}`)
     },
+    async sendPOSTRequest() {
+      return axios.post(`https://jsonplaceholder.typicode.com/posts`, {
+        method: 'POST',
+        body: JSON.stringify({
+          title: 'foo',
+          body: 'bar',
+          userId: 1
+        }),
+        headers: {"Content-type": "application/json; charset=UTF-8"}
+      })
+      .then(json => console.log("POST REQUEST",json))
+    }
   }
 }
 </script>

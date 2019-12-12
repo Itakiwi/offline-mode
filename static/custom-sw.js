@@ -10,12 +10,14 @@ const assets = [
     'https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900&display=swap',
     '_/nuxt/*',
     'https://jsonplaceholder.typicode.com/users',
-    '/static/*'
+    '/static/*',
+    '/static/favicon.ico'
+
 ]
 
-self.addEventListener('install', evt => {
+self.addEventListener('install', event => {
     // console.log('service worker has been installed');
-    evt.waitUntil(
+    event.waitUntil(
         caches.open(staticCacheName).then(cache => {
             console.log('caching assets')
             cache.addAll(assets)
@@ -23,8 +25,8 @@ self.addEventListener('install', evt => {
     )
 })    
 
-self.addEventListener('activate', evt => {
-    evt.waitUntil(
+self.addEventListener('activate', event => {
+    event.waitUntil(
         caches.keys().then(keys => {
             return Promise.all(keys
                 .filter(key => key !== staticCacheName)
@@ -33,16 +35,30 @@ self.addEventListener('activate', evt => {
     )
 }) 
 
-self.addEventListener('fetch', evt => {
-  evt.respondWith(
-    caches.match(evt.request)
-      .then(cacheRes => {
-        return cacheRes || fetch(evt.request).then(fetchRes => {
-            return caches.open(dynamicCache).then(cache => {
-                cache.put(evt.request.url, fetchRes.clone());
-                return fetchRes;
+self.addEventListener('fetch', event => {
+    console.log("Inside fetch")
+    if(event.request.method === "POST") {
+        console.log('Handling fetch event for', event.request);
+        indexedDB.open('requests', 1, function(upgradeDB) {
+            var store = upgradeDB.createObjectStore('POST', {
+              keyPath: 'id'
+            });
+            store.put({URL: event.request.url, body: event.request.body});
+          });
+    }
+    else {
+    event.respondWith(
+            caches.match(event.request)
+            .then(cacheRes => {
+                console.log("this is not a post")
+
+                return cacheRes || fetch(event.request).then(fetchRes => {
+                    return caches.open(dynamicCache).then(cache => {
+                        cache.put(event.request.url, fetchRes.clone());
+                        return fetchRes;
+                    })
+                });
             })
-        });
-      })
-  )
+        )
+    }
 }) 
